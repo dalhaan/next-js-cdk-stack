@@ -1,31 +1,28 @@
 {
+  "publishConfig": {
+    "directory": "dist",
+    "access": "public"
+  },
   "name": "open-next-conico-fork",
-  "version": "0.0.1",
+  "version": "0.8.0",
+  "bin": {
+    "open-next": "./index.js"
+  },
+  "license": "MIT",
+  "type": "module",
   "description": "Open source Next.js serverless adapter",
   "homepage": "https://open-next.js.org",
-  "type": "module",
-  "main": "src/build",
-  "bin": {
-    "open-next": "./dist/index.js"
-  },
+  "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc -w",
-    "release": "./.changeset/release",
-    "release-snapshot": "./.changeset/snapshot"
+    "build": "rm -rf dist/assets && mkdir -p dist && cp -r assets dist/assets && tsc && cp package.json dist/package.json",
+    "dev": "tsc -w"
   },
   "keywords": [],
   "author": "",
-  "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.234.0",
-    "@changesets/changelog-github": "^0.4.4",
-    "@changesets/cli": "^2.22.0",
     "@tsconfig/node18": "^1.0.1",
-    "@vercel/build-utils": "^5.7.0",
-    "@vercel/next": "^3.3.2",
     "esbuild": "^0.15.18",
-    "serverless-http": "^3.1.0",
     "yargs": "^17.6.2"
   },
   "bugs": {
@@ -35,5 +32,5 @@
     "type": "git",
     "url": "git+https://github.com/serverless-stack/open-next.git"
   },
-  "yalcSig": "bdaaee67d6a6126b92622c11da96a31a"
+  "yalcSig": "b85212ec4217c43b3a9128c2a4dc37ad"
 }

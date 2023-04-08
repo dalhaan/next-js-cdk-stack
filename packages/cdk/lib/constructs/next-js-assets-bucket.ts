@@ -4,6 +4,7 @@ import { Construct } from "constructs";
 
 type Props = {
   openNextAssetsDir: string;
+  openNextCacheDir: string;
 } & Pick<s3.Bucket, "bucketName">;
 
 export class NextJSAssetsBucket extends s3.Bucket {
@@ -15,7 +16,10 @@ export class NextJSAssetsBucket extends s3.Bucket {
 
     // Upload assets
     new s3Deploy.BucketDeployment(this, "DeployFiles", {
-      sources: [s3Deploy.Source.asset(props.openNextAssetsDir)],
+      sources: [
+        s3Deploy.Source.asset(props.openNextAssetsDir),
+        s3Deploy.Source.asset(props.openNextCacheDir),
+      ],
       destinationBucket: this,
       retainOnDelete: false,
     });

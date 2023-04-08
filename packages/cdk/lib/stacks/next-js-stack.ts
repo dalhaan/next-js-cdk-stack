@@ -6,6 +6,7 @@ import { NextJsImageOptimisationFunction } from "../constructs/next-js-image-opt
 import { NextJsCdn } from "../constructs/next-js-cdn";
 
 const OPEN_NEXT_ASSETS_DIR = "../../packages/open-next-test/.open-next/assets/";
+const OPEN_NEXT_CACHE_DIR = "../../packages/open-next-test/.open-next/cache/";
 const OPEN_NEXT_SERVER_FUNCTION_DIR =
   "../../packages/open-next-test/.open-next/server-function/";
 const OPEN_NEXT_IMAGE_OPTIMISATION_FUNCTION_DIR =
@@ -27,6 +28,7 @@ export class NextJsStack extends cdk.Stack {
     const assetsBucket = new NextJSAssetsBucket(this, "AssetsBucket", {
       bucketName: "opennext-assets",
       openNextAssetsDir: OPEN_NEXT_ASSETS_DIR,
+      openNextCacheDir: OPEN_NEXT_CACHE_DIR,
     });
 
     const serverFunction = new NextJsServerFunction(this, "ServerFunction", {

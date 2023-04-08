@@ -1,9 +1,8 @@
 import fs from "node:fs";
 import url from "node:url";
 import path from "node:path";
+import cp from "node:child_process";
 import { buildSync } from "esbuild";
-// @ts-ignore @vercel/next does not provide types
-import { build as nextBuild } from "@vercel/next";
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 const appPath = process.cwd();
 const outputDir = ".open-next";
@@ -13,16 +12,15 @@ export async function build() {
     printVersion();
     checkRunningInsideNextjsApp();
     setStandaloneBuildMode();
-    const monorepoRoot = findMonorepoRoot();
+    const { root: monorepoRoot, packager } = findMonorepoRoot();
     // Build Next.js app
     printHeader("Building Next.js app");
-    const buildOutput = await buildNextjsApp(monorepoRoot);
+    await buildNextjsApp(packager);
     // Generate deployable bundle
     printHeader("Generating bundle");
     initOutputDir();
     createServerBundle(monorepoRoot);
     createImageOptimizationBundle();
-    createMiddlewareBundle(buildOutput);
     createAssets();
 }
 function checkRunningInsideNextjsApp() {
@@ -35,36 +33,32 @@ function checkRunningInsideNextjsApp() {
 function findMonorepoRoot() {
     let currentPath = appPath;
     while (currentPath !== "/") {
-        if (fs.existsSync(path.join(currentPath, "package-lock.json")) ||
-            fs.existsSync(path.join(currentPath, "yarn.lock")) ||
-            fs.existsSync(path.join(currentPath, "pnpm-lock.yaml"))) {
+        const found = [
+            { file: "package-lock.json", packager: "npm" },
+            { file: "yarn.lock", packager: "yarn" },
+            { file: "pnpm-lock.yaml", packager: "pnpm" },
+        ].find((f) => fs.existsSync(path.join(currentPath, f.file)));
+        if (found) {
             if (currentPath !== appPath) {
                 console.info("Monorepo detected at", currentPath);
             }
-            return currentPath;
+            return { root: currentPath, packager: found.packager };
         }
         currentPath = path.dirname(currentPath);
     }
     // note: a lock file (package-lock.json, yarn.lock, or pnpm-lock.yaml) is
     //       not found in the app's directory or any of its parent directories.
     //       We are going to assume that the app is not part of a monorepo.
-    return appPath;
+    return { root: appPath, packager: "npm" };
 }
 function setStandaloneBuildMode() {
     // Equivalent to setting `target: 'standalone'` in next.config.js
     process.env.NEXT_PRIVATE_STANDALONE = "true";
 }
-function buildNextjsApp(monorepoRoot) {
-    // note: always pass in "next.config.js" as the entrypoint.
-    //       @vercel/next only accepts "next.config.js" as the
-    //       entrypoint. But it doesn't actually use the file.
-    return nextBuild({
-        files: [],
-        repoRootPath: monorepoRoot,
-        workPath: appPath,
-        entrypoint: "next.config.js",
-        config: {},
-        meta: {},
+function buildNextjsApp(packager) {
+    cp.spawnSync(packager, packager === "npm" ? ["run", "build"] : ["build"], {
+        stdio: "inherit",
+        cwd: appPath,
     });
 }
 function printHeader(header) {
@@ -78,19 +72,13 @@ function printHeader(header) {
     ].join("\n"));
 }
 function printVersion() {
-    const pathToPackageJson = path.join(__dirname, "../package.json");
+    const pathToPackageJson = path.join(__dirname, "./package.json");
     const pkg = JSON.parse(fs.readFileSync(pathToPackageJson, "utf-8"));
     console.info(`Using v${pkg.version}`);
 }
 function initOutputDir() {
     fs.rmSync(outputDir, { recursive: true, force: true });
     fs.mkdirSync(tempDir, { recursive: true });
-}
-function getMiddlewareName() {
-    // note: middleware can be at the root or inside "src"
-    const filePath = path.join(appPath, ".next", "server", "middleware-manifest.json");
-    const json = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(json).middleware?.["/"]?.name;
 }
 function createServerBundle(monorepoRoot) {
     console.info(`Bundling server function...`);
@@ -152,8 +140,8 @@ function createServerBundle(monorepoRoot) {
             js: [
                 "import { createRequire as topLevelCreateRequire } from 'module';",
                 "const require = topLevelCreateRequire(import.meta.url);",
-                "import url from 'url';",
-                "const __dirname = url.fileURLToPath(new URL('.', import.meta.url));",
+                "import bannerUrl from 'url';",
+                "const __dirname = bannerUrl.fileURLToPath(new URL('.', import.meta.url));",
             ].join(""),
         },
     });
@@ -193,8 +181,8 @@ function createImageOptimizationBundle() {
             js: [
                 "import { createRequire as topLevelCreateRequire } from 'module';",
                 "const require = topLevelCreateRequire(import.meta.url);",
-                "import url from 'url';",
-                "const __dirname = url.fileURLToPath(new URL('.', import.meta.url));",
+                "import bannerUrl from 'url';",
+                "const __dirname = bannerUrl.fileURLToPath(new URL('.', import.meta.url));",
             ].join("\n"),
         },
     });
@@ -202,60 +190,7 @@ function createImageOptimizationBundle() {
     fs.mkdirSync(path.join(outputPath, ".next"));
     fs.copyFileSync(path.join(appPath, ".next/required-server-files.json"), path.join(outputPath, ".next/required-server-files.json"));
     // Copy over sharp node modules
-    fs.cpSync(path.join(__dirname, "../assets/sharp-node-modules"), path.join(outputPath, "node_modules"), { recursive: true });
-}
-function createMiddlewareBundle(buildOutput) {
-    const middlewareName = getMiddlewareName();
-    if (middlewareName) {
-        console.info(`Bundling middleware edge function...`);
-    }
-    else {
-        console.info(`Bundling middleware edge function... \x1b[36m%s\x1b[0m`, "skipped");
-        return;
-    }
-    // Create output folder
-    const outputPath = path.join(outputDir, "middleware-function");
-    fs.mkdirSync(outputPath, { recursive: true });
-    // Save middleware code to file
-    const src = buildOutput.output[middlewareName].files["index.js"].data;
-    fs.writeFileSync(path.join(tempDir, "middleware.js"), src);
-    ["middleware-adapter.js", "logger.js"].forEach((file) => {
-        fs.copyFileSync(path.join(__dirname, "adapters", file), path.join(tempDir, file));
-    });
-    // Build Lambda code
-    esbuildSync({
-        entryPoints: [path.join(tempDir, "middleware-adapter.js")],
-        outfile: path.join(outputPath, "index.mjs"),
-        banner: {
-            js: [
-                // WORKAROUND: Add `Headers.getAll()` extension to the middleware function — https://github.com/serverless-stack/open-next#workaround-add-headersgetall-extension-to-the-middleware-function
-                "class Response extends globalThis.Response {",
-                "  constructor(body, init) {",
-                "    super(body, init);",
-                "    this.headers.getAll = (name) => {",
-                "      name = name.toLowerCase();",
-                "      if (name !== 'set-cookie') {",
-                "        throw new Error('Headers.getAll is only supported for Set-Cookie');",
-                "      }",
-                "      return [...this.headers.entries()]",
-                "        .filter(([key]) => key === name)",
-                "        .map(([, value]) => value);",
-                "    };",
-                "  }",
-                "}",
-                "Object.assign(globalThis, {",
-                "  Response,",
-                "  self: {},",
-                "});",
-                // WORKAROUND: Polyfill `crypto` for the middleware function (NextAuth specific) - https://github.com/serverless-stack/open-next#workaround-polyfill-crypto-for-the-middleware-function
-                "import crypto from 'node:crypto';",
-                "Object.assign(globalThis, {",
-                "  crypto,",
-                "  CryptoKey: crypto.webcrypto.CryptoKey,",
-                "});",
-            ].join(""),
-        },
-    });
+    fs.cpSync(path.join(__dirname, "./assets/sharp-node-modules"), path.join(outputPath, "node_modules"), { recursive: true });
 }
 function createAssets() {
     console.info(`Bundling assets...`);
@@ -278,6 +213,7 @@ function esbuildSync(options) {
         platform: "node",
         bundle: true,
         minify: process.env.OPEN_NEXT_DEBUG ? false : true,
+        sourcemap: process.env.OPEN_NEXT_DEBUG ? "inline" : false,
         ...options,
         // "process.env.OPEN_NEXT_DEBUG" determins if the logger writes to console.log
         define: {

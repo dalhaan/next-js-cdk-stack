@@ -1,6 +1,6 @@
 export declare function loadConfig(nextDir: string): any;
 export declare function loadBuildId(nextDir: string): string;
-interface PrerenderManifest {
+export interface PrerenderManifest {
     version: number;
     routes: {
         dataRoute: string;
@@ -20,4 +20,3 @@ interface PrerenderManifest {
     };
 }
 export declare function loadPrerenderManifest(nextDir: string): PrerenderManifest;
-export {};
