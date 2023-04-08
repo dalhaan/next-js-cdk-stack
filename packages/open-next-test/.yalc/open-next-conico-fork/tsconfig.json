@@ -1,0 +1,12 @@
+{
+  "extends": "@tsconfig/node18/tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "module": "esnext",
+    "moduleResolution": "nodenext",
+    "outDir": "./dist",
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src"],
+  "exclude": []
+}

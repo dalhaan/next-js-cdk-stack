@@ -1,0 +1,13 @@
+{
+  "version": "v1",
+  "packages": {
+    "open-next": {
+      "signature": "5ea844de3037afee6d34418301d5ee8e",
+      "file": true
+    },
+    "open-next-conico-fork": {
+      "signature": "bdaaee67d6a6126b92622c11da96a31a",
+      "file": true
+    }
+  }
+}

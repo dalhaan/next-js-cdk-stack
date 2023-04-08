@@ -1,0 +1,25 @@
+{
+  "name": "open-next-test",
+  "version": "0.1.0",
+  "files": [
+    ".open-next"
+  ],
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:open-next": "open-next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@types/node": "18.15.8",
+    "@types/react": "18.0.29",
+    "@types/react-dom": "18.0.11",
+    "next": "13.2.4",
+    "open-next-conico-fork": "file:.yalc/open-next-conico-fork",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "typescript": "5.0.2"
+  },
+  "devDependencies": {}
+}
