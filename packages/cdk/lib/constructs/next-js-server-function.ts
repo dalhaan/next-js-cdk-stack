@@ -10,7 +10,7 @@ type Props = {
   openNextServerDir: string;
 };
 
-export class NextJSServerFunction extends Construct {
+export class NextJsServerFunction extends Construct {
   public url: string;
 
   constructor(scope: Construct, id: string, props: Props) {

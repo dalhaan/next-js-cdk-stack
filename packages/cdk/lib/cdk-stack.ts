@@ -1,11 +1,9 @@
 import * as cdk from "aws-cdk-lib";
-import * as lambda from "aws-cdk-lib/aws-lambda";
-import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
-import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import { Construct } from "constructs";
-import { stripSchemeFromUrl } from "./utils";
 import { NextJSAssetsBucket } from "./constructs/next-js-assets-bucket";
-import { NextJSServerFunction } from "./constructs/next-js-server-function";
+import { NextJsServerFunction } from "./constructs/next-js-server-function";
+import { NextJsImageOptimisationFunction } from "./constructs/next-js-image-optimisation-function";
+import { NextJsCdn } from "./constructs/next-js-cdn";
 
 const OPEN_NEXT_ASSETS_DIR = "../../packages/open-next-test/.open-next/assets/";
 const OPEN_NEXT_SERVER_FUNCTION_DIR =
@@ -17,105 +15,40 @@ export class OpenNextStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // ----------------
-    // S3 assets bucket
-    // ----------------
-
-    // Assets Bucket
-    // const assetsBucket = new s3.Bucket(this, "AssetsBucket", {
-    //   bucketName: "opennext-assets",
-    // });
     const assetsBucket = new NextJSAssetsBucket(this, "AssetsBucket", {
       bucketName: "opennext-assets",
       openNextAssetsDir: OPEN_NEXT_ASSETS_DIR,
     });
 
-    // ----------------------
-    // Server function lambda
-    // ----------------------
-    const serverFunction = new NextJSServerFunction(this, "ServerFunction", {
+    const serverFunction = new NextJsServerFunction(this, "ServerFunction", {
       assetsBucket,
       openNextServerDir: OPEN_NEXT_SERVER_FUNCTION_DIR,
     });
+
+    const imageOptimisationFunction = new NextJsImageOptimisationFunction(
+      this,
+      "ImageOptimisationFunction",
+      {
+        assetsBucket,
+        openNextImageOptimisationFunctionDir:
+          OPEN_NEXT_IMAGE_OPTIMISATION_FUNCTION_DIR,
+      }
+    );
+
+    const cdn = new NextJsCdn(this, "CloudFront", {
+      assetsBucket,
+      serverFunction,
+      imageOptimisationFunction,
+    });
+
+    // Outputs
 
     new cdk.CfnOutput(this, "ServerFunctionUrl", {
       value: serverFunction.url,
     });
 
-    // ----------------------------------
-    // Image optimisation function lambda
-    // ----------------------------------
-    const imageOptimisationFunction = new lambda.Function(
-      this,
-      "ImageOptimisationFunction",
-      {
-        runtime: lambda.Runtime.NODEJS_18_X,
-        architecture: lambda.Architecture.ARM_64,
-        handler: "index.handler",
-        code: lambda.Code.fromAsset(OPEN_NEXT_IMAGE_OPTIMISATION_FUNCTION_DIR),
-        timeout: cdk.Duration.seconds(10),
-      }
-    );
-
-    // Server function environment variables
-    imageOptimisationFunction.addEnvironment(
-      "BUCKET_NAME",
-      assetsBucket.bucketName
-    );
-    imageOptimisationFunction.addEnvironment("NODE_ENV", "production");
-
-    // Add function URL
-    const imageOptimisationFunctionUrl =
-      imageOptimisationFunction.addFunctionUrl({
-        authType: lambda.FunctionUrlAuthType.NONE,
-      });
-    // Strip scheme (https://) from image optimisation function url to use for an HttpOrigin
-    const imageOptimisationFunctionUrlNoScheme = stripSchemeFromUrl(
-      imageOptimisationFunctionUrl.url
-    );
-
     new cdk.CfnOutput(this, "ImageOptimisationFunctionUrl", {
-      value: imageOptimisationFunctionUrl.url,
-    });
-
-    // Allow read/write to assets bucket
-    assetsBucket.grantRead(imageOptimisationFunction);
-
-    // ----------
-    // CloudFront
-    // ----------
-
-    // origins
-    const assetsBucketOrigin = new origins.S3Origin(assetsBucket);
-    const serverFunctionOrigin = new origins.HttpOrigin(serverFunction.url);
-    const imageOptimisationFunctionOrigin = new origins.HttpOrigin(
-      imageOptimisationFunctionUrlNoScheme
-    );
-    const defaultFailoverOriginGroup = new origins.OriginGroup({
-      primaryOrigin: serverFunctionOrigin,
-      fallbackOrigin: assetsBucketOrigin,
-      fallbackStatusCodes: [404],
-    });
-
-    const cdn = new cloudfront.Distribution(this, "CloudFront", {
-      defaultBehavior: {
-        origin: defaultFailoverOriginGroup,
-      },
-      additionalBehaviors: {
-        "/_next/static/*": {
-          origin: assetsBucketOrigin,
-        },
-        "/_next/image/*": {
-          origin: imageOptimisationFunctionOrigin,
-        },
-        "/_next/data/*": {
-          origin: serverFunctionOrigin,
-        },
-        "/api/*": {
-          origin: serverFunctionOrigin,
-          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
-        },
-      },
+      value: imageOptimisationFunction.url,
     });
   }
 }
