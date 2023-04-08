@@ -1,9 +1,9 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
-import { NextJSAssetsBucket } from "./constructs/next-js-assets-bucket";
-import { NextJsServerFunction } from "./constructs/next-js-server-function";
-import { NextJsImageOptimisationFunction } from "./constructs/next-js-image-optimisation-function";
-import { NextJsCdn } from "./constructs/next-js-cdn";
+import { NextJSAssetsBucket } from "../constructs/next-js-assets-bucket";
+import { NextJsServerFunction } from "../constructs/next-js-server-function";
+import { NextJsImageOptimisationFunction } from "../constructs/next-js-image-optimisation-function";
+import { NextJsCdn } from "../constructs/next-js-cdn";
 
 const OPEN_NEXT_ASSETS_DIR = "../../packages/open-next-test/.open-next/assets/";
 const OPEN_NEXT_SERVER_FUNCTION_DIR =
@@ -11,7 +11,7 @@ const OPEN_NEXT_SERVER_FUNCTION_DIR =
 const OPEN_NEXT_IMAGE_OPTIMISATION_FUNCTION_DIR =
   "../../packages/open-next-test/.open-next/image-optimization-function/";
 
-export class OpenNextStack extends cdk.Stack {
+export class NextJsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
