@@ -5,6 +5,7 @@ import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import { Construct } from "constructs";
 import { stripSchemeFromUrl } from "./utils";
 import { NextJSAssetsBucket } from "./constructs/next-js-assets-bucket";
+import { NextJSServerFunction } from "./constructs/next-js-server-function";
 
 const OPEN_NEXT_ASSETS_DIR = "../../packages/open-next-test/.open-next/assets/";
 const OPEN_NEXT_SERVER_FUNCTION_DIR =
@@ -26,37 +27,20 @@ export class OpenNextStack extends cdk.Stack {
     // });
     const assetsBucket = new NextJSAssetsBucket(this, "AssetsBucket", {
       bucketName: "opennext-assets",
-      openNextAssetsDirectory: OPEN_NEXT_ASSETS_DIR,
+      openNextAssetsDir: OPEN_NEXT_ASSETS_DIR,
     });
 
     // ----------------------
     // Server function lambda
     // ----------------------
-    const serverFunction = new lambda.Function(this, "ServerFunction", {
-      runtime: lambda.Runtime.NODEJS_18_X,
-      handler: "index.handler",
-      code: lambda.Code.fromAsset(OPEN_NEXT_SERVER_FUNCTION_DIR),
-      timeout: cdk.Duration.seconds(10),
+    const serverFunction = new NextJSServerFunction(this, "ServerFunction", {
+      assetsBucket,
+      openNextServerDir: OPEN_NEXT_SERVER_FUNCTION_DIR,
     });
-
-    // Server function environment variables
-    serverFunction.addEnvironment("BUCKET_NAME", assetsBucket.bucketName);
-    serverFunction.addEnvironment("CACHE_BUCKET_NAME", assetsBucket.bucketName);
-    serverFunction.addEnvironment("NODE_ENV", "production");
-
-    // Add function URL
-    const serverFunctionUrl = serverFunction.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.NONE,
-    });
-    // Strip scheme (https://) from server function url to use for an HttpOrigin
-    const serverFunctionUrlNoScheme = stripSchemeFromUrl(serverFunctionUrl.url);
 
     new cdk.CfnOutput(this, "ServerFunctionUrl", {
-      value: serverFunctionUrl.url,
+      value: serverFunction.url,
     });
-
-    // Allow read/write to assets bucket
-    assetsBucket.grantReadWrite(serverFunction);
 
     // ----------------------------------
     // Image optimisation function lambda
@@ -103,9 +87,7 @@ export class OpenNextStack extends cdk.Stack {
 
     // origins
     const assetsBucketOrigin = new origins.S3Origin(assetsBucket);
-    const serverFunctionOrigin = new origins.HttpOrigin(
-      serverFunctionUrlNoScheme
-    );
+    const serverFunctionOrigin = new origins.HttpOrigin(serverFunction.url);
     const imageOptimisationFunctionOrigin = new origins.HttpOrigin(
       imageOptimisationFunctionUrlNoScheme
     );
