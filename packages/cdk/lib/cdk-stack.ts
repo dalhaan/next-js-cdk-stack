@@ -1,11 +1,10 @@
 import * as cdk from "aws-cdk-lib";
-import * as s3 from "aws-cdk-lib/aws-s3";
-import * as s3Deploy from "aws-cdk-lib/aws-s3-deployment";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import { Construct } from "constructs";
 import { stripSchemeFromUrl } from "./utils";
+import { NextJSAssetsBucket } from "./constructs/next-js-assets-bucket";
 
 const OPEN_NEXT_ASSETS_DIR = "../../packages/open-next-test/.open-next/assets/";
 const OPEN_NEXT_SERVER_FUNCTION_DIR =
@@ -22,15 +21,12 @@ export class OpenNextStack extends cdk.Stack {
     // ----------------
 
     // Assets Bucket
-    const assetsBucket = new s3.Bucket(this, "AssetsBucket", {
+    // const assetsBucket = new s3.Bucket(this, "AssetsBucket", {
+    //   bucketName: "opennext-assets",
+    // });
+    const assetsBucket = new NextJSAssetsBucket(this, "AssetsBucket", {
       bucketName: "opennext-assets",
-    });
-
-    // Upload assets
-    new s3Deploy.BucketDeployment(this, "DeployFiles", {
-      sources: [s3Deploy.Source.asset(OPEN_NEXT_ASSETS_DIR)],
-      destinationBucket: assetsBucket,
-      retainOnDelete: false,
+      openNextAssetsDirectory: OPEN_NEXT_ASSETS_DIR,
     });
 
     // ----------------------
