@@ -1,8 +1,19 @@
 {
   "name": "open-next-cdk",
   "private": true,
-  "workspaces": [
-    "packages/cdk",
-    "packages/open-next-test"
-  ]
+  "workspaces": {
+    "packages": [
+      "packages/cdk",
+      "packages/open-next-test"
+    ],
+    "nohoist": [
+      "**/open-next-test/**"
+    ]
+  },
+  "scripts": {
+    "dev": "yarn workspace open-next-test dev",
+    "build": "yarn workspace open-next-test build:open-next",
+    "diff": "yarn workspace cdk cdk diff",
+    "deploy": "yarn workspace cdk deploy"
+  }
 }

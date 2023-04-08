@@ -50,7 +50,7 @@ export default function Isr(
         <h2 className={inter.className}>{props.randomNumber}</h2>
       </div>
 
-      {/* <RouteLinks /> */}
+      <RouteLinks />
     </DefaultLayout>
   );
 }

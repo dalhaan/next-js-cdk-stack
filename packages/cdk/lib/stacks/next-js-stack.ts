@@ -11,6 +11,15 @@ const OPEN_NEXT_SERVER_FUNCTION_DIR =
 const OPEN_NEXT_IMAGE_OPTIMISATION_FUNCTION_DIR =
   "../../packages/open-next-test/.open-next/image-optimization-function/";
 
+/**
+ * NextJS CDK Stack
+ *
+ * Creates:
+ *   - S3 bucket for assets
+ *   - Server function lambda
+ *   - Image optimisation function lambda
+ *   - CloudFront distribution
+ */
 export class NextJsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);

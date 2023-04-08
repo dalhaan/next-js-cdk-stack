@@ -17,14 +17,19 @@ export const RouteLinks = () => {
           Server-side rendered page <span>-&gt;</span>
         </h2>
       </Link>
-      <Link href="/static" className={styles.card}>
+      <Link href="/staticWithData" className={styles.card}>
         <h2 className={inter.className}>
-          Statically generated page <span>-&gt;</span>
+          Static with data <span>-&gt;</span>
+        </h2>
+      </Link>
+      <Link href="/staticWithoutData" className={styles.card}>
+        <h2 className={inter.className}>
+          Static without data <span>-&gt;</span>
         </h2>
       </Link>
       <Link href="/isr" className={styles.card}>
         <h2 className={inter.className}>
-          Incrementally-statically generated page <span>-&gt;</span>
+          ISR <span>-&gt;</span>
         </h2>
       </Link>
     </div>
