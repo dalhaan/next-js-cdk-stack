@@ -5,12 +5,12 @@ import { NextJsServerFunction } from "../constructs/next-js-server-function";
 import { NextJsImageOptimisationFunction } from "../constructs/next-js-image-optimisation-function";
 import { NextJsCdn } from "../constructs/next-js-cdn";
 
-const OPEN_NEXT_ASSETS_DIR = "../../packages/open-next-test/.open-next/assets/";
-const OPEN_NEXT_CACHE_DIR = "../../packages/open-next-test/.open-next/cache/";
+const OPEN_NEXT_ASSETS_DIR = "../../packages/www/.open-next/assets/";
+const OPEN_NEXT_CACHE_DIR = "../../packages/www/.open-next/cache/";
 const OPEN_NEXT_SERVER_FUNCTION_DIR =
-  "../../packages/open-next-test/.open-next/server-function/";
+  "../../packages/www/.open-next/server-function/";
 const OPEN_NEXT_IMAGE_OPTIMISATION_FUNCTION_DIR =
-  "../../packages/open-next-test/.open-next/image-optimization-function/";
+  "../../packages/www/.open-next/image-optimization-function/";
 
 /**
  * NextJS CDK Stack

@@ -3184,7 +3184,7 @@ onetime@^5.1.2:
   dependencies:
     mimic-fn "^2.1.0"
 
-"open-next-conico-fork@file:packages/open-next-test/.yalc/open-next-conico-fork":
+"open-next-conico-fork@file:packages/www/.yalc/open-next-conico-fork":
   version "0.8.0"
   dependencies:
     "@aws-sdk/client-s3" "^3.234.0"

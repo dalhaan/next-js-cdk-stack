@@ -13,8 +13,8 @@ yarn deploy # provision and deploy stack
 
 ## Project structure
 
-This repo is a monorepo with two packages, `open-next-test` and `cdk`.
+This repo is a monorepo with two packages, `www` and `cdk`.
 
-`open-next-test` is a NextJS project that uses Open Next to create an AWS compatible production build.
+`www` is a NextJS project that uses Open Next to create an AWS compatible production build.
 
-`cdk` contains the code for provisioning the infra and deploying `open-next-test` to AWS.
+`cdk` contains the code for provisioning the infra and deploying `www` to AWS.

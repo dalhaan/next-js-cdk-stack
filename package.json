@@ -4,15 +4,15 @@
   "workspaces": {
     "packages": [
       "packages/cdk",
-      "packages/open-next-test"
+      "packages/www"
     ],
     "nohoist": [
-      "**/open-next-test/**"
+      "**/www/**"
     ]
   },
   "scripts": {
-    "dev": "yarn workspace open-next-test dev",
-    "build": "yarn workspace open-next-test build:open-next",
+    "dev": "yarn workspace www dev",
+    "build": "yarn workspace www build:open-next",
     "diff": "yarn workspace cdk cdk diff",
     "deploy": "yarn workspace cdk deploy"
   }
