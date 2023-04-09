@@ -5,7 +5,7 @@ export default class S3Cache {
     client;
     buildId;
     constructor(_ctx) {
-        this.client = new S3Client({});
+        this.client = new S3Client({ region: process.env.CACHE_BUCKET_REGION });
         this.buildId = loadBuildId(path.dirname(_ctx.serverDistDir ?? ".next/server"));
     }
     async get(key) {

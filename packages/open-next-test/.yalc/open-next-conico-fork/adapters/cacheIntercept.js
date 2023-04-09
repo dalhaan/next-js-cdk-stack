@@ -1,8 +1,9 @@
+import { revalidateInBackground } from "./util.js";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { request as httpsRequest } from "https";
+const DEFAULT_REVALIDATE = 365 * 24 * 60 * 60;
 export class CacheInterceptor {
     buildId;
-    s3 = new S3Client({});
+    s3 = new S3Client({ region: process.env.CACHE_BUCKET_REGION });
     revalidates = new Map();
     prerenderedRoutes = [];
     compiledDynamicRoutes = [];
@@ -12,7 +13,7 @@ export class CacheInterceptor {
         this.buildId = buildId;
         Object.entries(routes).forEach(([route, { srcRoute, initialRevalidateSeconds, dataRoute }]) => {
             const _initialRevalidateSeconds = typeof initialRevalidateSeconds === "boolean"
-                ? 60 * 60 * 24 * 365 // 1 year
+                ? DEFAULT_REVALIDATE // 1 year
                 : initialRevalidateSeconds;
             this.revalidates.set(srcRoute ?? route, _initialRevalidateSeconds);
             this.prerenderedRoutes.push({
@@ -72,21 +73,11 @@ export class CacheInterceptor {
             return {
                 key,
                 route: url,
-                revalidate: this.revalidates.get(foundCompiled) ?? 0,
+                revalidate: this.revalidates.get(foundCompiled) ?? DEFAULT_REVALIDATE,
             };
         }
         return null;
     };
-    async revalidate(uri, host) {
-        await new Promise((resolve, reject) => {
-            httpsRequest(`https://${host}${uri}`, {
-                method: "HEAD",
-                headers: { "x-prerender-revalidate": this.preview },
-            })
-                .on("error", (err) => reject(err))
-                .end(() => resolve());
-        });
-    }
     async handler(event) {
         const startTime = Date.now();
         // const request = event.Records[0].cf.request;
@@ -103,11 +94,17 @@ export class CacheInterceptor {
         if (matchedRoute) {
             const { revalidate, key } = matchedRoute;
             const isDataRoute = uri.startsWith("/_next/data");
+            const isRscRoute = event.headers.rsc === "1";
+            const byType = ({ html, json, rsc }) => isDataRoute ? json : isRscRoute ? rsc : html;
             try {
                 const bucketName = process.env.CACHE_BUCKET_NAME;
                 const { Body, LastModified } = await this.s3.send(new GetObjectCommand({
                     Bucket: bucketName,
-                    Key: `${this.buildId}${key}${isDataRoute ? ".json" : ".html"}`,
+                    Key: `${this.buildId}${key}${byType({
+                        html: ".html",
+                        json: ".json",
+                        rsc: ".rsc",
+                    })}`,
                 }));
                 if (!Body)
                     throw new Error("No body found in s3 response.");
@@ -120,7 +117,7 @@ export class CacheInterceptor {
                 const remaining = ((expirationDate - now) / 1000).toFixed(0);
                 if (expirationDate < now) {
                     // Stale, revalidate
-                    await this.revalidate(uri, event.headers.host);
+                    await revalidateInBackground(event.domainName, uri, this.preview);
                     isStale = true;
                 }
                 console.log(`Serving ${uri} from s3 cache in ${Date.now() - startTime}ms`);
@@ -128,10 +125,15 @@ export class CacheInterceptor {
                     statusCode: 200,
                     body: method === "GET" ? body : "",
                     headers: {
-                        "Content-Type": isDataRoute ? "application/json" : "text/html",
+                        "Content-Type": byType({
+                            html: "text/html",
+                            json: "application/json",
+                            rsc: "text/x-component",
+                        }),
                         "Cache-Control": isStale
                             ? "s-maxage=0"
                             : `s-maxage=${remaining}, stale-while-revalidate`,
+                        "x-cache-intercepted": "1",
                     },
                     isBase64Encoded: false,
                 };

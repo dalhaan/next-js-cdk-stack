@@ -52,14 +52,12 @@ export class NextJsStack extends cdk.Stack {
       imageOptimisationFunction,
     });
 
+    // Deploy assets to bucket and invalidate cdn
+    assetsBucket.deployAndInvalidate(cdn);
+
     // Outputs
-
-    new cdk.CfnOutput(this, "ServerFunctionUrl", {
-      value: serverFunction.url,
-    });
-
-    new cdk.CfnOutput(this, "ImageOptimisationFunctionUrl", {
-      value: imageOptimisationFunction.url,
+    new cdk.CfnOutput(this, "CloudFrontDistributionDomainName", {
+      value: cdn.distributionDomainName,
     });
   }
 }

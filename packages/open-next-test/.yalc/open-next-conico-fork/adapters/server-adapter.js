@@ -2,10 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { IncomingMessage } from "./request.js";
 import { ServerResponse } from "./response.js";
-import { request } from "node:https";
 // @ts-ignore
 import NextServer from "next/dist/server/next-server.js";
-import { loadBuildId, loadConfig, loadPrerenderManifest } from "./util.js";
+import { loadBuildId, loadConfig, loadPrerenderManifest, revalidateInBackground, } from "./util.js";
 import { isBinaryContentType } from "./binary.js";
 import { debug } from "./logger.js";
 import { CacheInterceptor } from "./cacheIntercept.js";
@@ -80,6 +79,9 @@ const eventParser = {
         get remoteAddress() {
             return event.requestContext.http.sourceIp;
         },
+        get domainName() {
+            return event.requestContext.domainName;
+        },
     }),
     cloudfront: (event) => ({
         get method() {
@@ -116,6 +118,9 @@ const eventParser = {
         get remoteAddress() {
             return event.Records[0].cf.request.clientIp;
         },
+        get domainName() {
+            return event.Records[0].cf.config.distributionDomainName;
+        },
     }),
 };
 /////////////
@@ -128,13 +133,16 @@ export async function handler(event) {
     const parser = isCloudFrontEvent
         ? eventParser.cloudfront(event)
         : eventParser.apiv2(event);
-    //Try intercept the request to see if it is a cached request
-    const cacheResponse = await cacheInterceptor.handler(parser);
-    if (cacheResponse) {
-        // If we have a cache response, return it and don't invoke NextServer
-        return isCloudFrontEvent
-            ? formatCloudFrontResponse(cacheResponse)
-            : formatApiv2Response(cacheResponse);
+    // Only enable this if you don't need middleware to run on the SSG and ISR request
+    if (process.env.EXPERIMENTAL_CACHE_INTERCEPTION) {
+        //Try intercept the request to see if it is a cached request
+        const cacheResponse = await cacheInterceptor.handler(parser);
+        if (cacheResponse) {
+            // If we have a cache response, return it and don't invoke NextServer
+            return isCloudFrontEvent
+                ? formatCloudFrontResponse(cacheResponse)
+                : formatApiv2Response(cacheResponse);
+        }
     }
     const reqProps = {
         method: parser.method,
@@ -168,20 +176,7 @@ export async function handler(event) {
     if (nextJsCacheHeader === "STALE" || nextJsCacheHeader === "MISS") {
         headers["cache-control"] = "public, max-age=0, s-maxage=0, must-revalidate";
         const preview = prerenderManifest.preview;
-        try {
-            await new Promise((resolve, reject) => {
-                request(`https://${headers.host}${parser.rawPath}`, {
-                    method: "HEAD",
-                    headers: { "x-prerender-revalidate": preview.previewModeId },
-                })
-                    .on("error", (err) => reject(err))
-                    .end(() => resolve());
-            });
-        }
-        catch (e) {
-            console.error("Failed to revalidate stale page.", parser.rawPath);
-            console.error(e);
-        }
+        await revalidateInBackground(parser.domainName, parser.rawPath, preview.previewModeId);
     }
     return isCloudFrontEvent
         ? // WORKAROUND: public/ static files served by the server function (AWS specific) — https://github.com/serverless-stack/open-next#workaround-public-static-files-served-by-the-server-function-aws-specific

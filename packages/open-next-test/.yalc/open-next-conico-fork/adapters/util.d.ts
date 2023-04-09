@@ -20,3 +20,4 @@ export interface PrerenderManifest {
     };
 }
 export declare function loadPrerenderManifest(nextDir: string): PrerenderManifest;
+export declare function revalidateInBackground(host: string, path: string, preview: string): Promise<void>;

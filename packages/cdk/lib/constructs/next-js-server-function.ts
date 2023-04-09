@@ -30,6 +30,7 @@ export class NextJsServerFunction extends Construct {
       props.assetsBucket.bucketName
     );
     serverFunction.addEnvironment("NODE_ENV", "production");
+    serverFunction.addEnvironment("EXPERIMENTAL_CACHE_INTERCEPTION", "true");
 
     // Add function URL
     const serverFunctionUrl = serverFunction.addFunctionUrl({

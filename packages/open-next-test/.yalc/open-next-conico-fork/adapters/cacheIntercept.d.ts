@@ -1,4 +1,4 @@
-import type { PrerenderManifest } from "./util.js";
+import { PrerenderManifest } from "./util.js";
 import { S3Client } from "@aws-sdk/client-s3";
 interface MatchedRoute {
     key: string;
@@ -14,6 +14,7 @@ interface ProxyEvent {
     rawPath: string;
     headers: Record<string, string>;
     method: string;
+    domainName: string;
 }
 interface ProxyResult {
     statusCode: number;
@@ -31,7 +32,6 @@ export declare class CacheInterceptor {
     constructor({ routes, dynamicRoutes, preview }: PrerenderManifest, buildId: string);
     parsePath(path: string): string;
     matcher: (url: string) => MatchedRoute | null;
-    revalidate(uri: string, host?: string): Promise<void>;
     handler(event: ProxyEvent): Promise<ProxyResult | false>;
 }
 export {};
