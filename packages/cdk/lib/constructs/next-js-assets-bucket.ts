@@ -1,21 +1,29 @@
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as s3Deploy from "aws-cdk-lib/aws-s3-deployment";
 import { Construct } from "constructs";
+
 import { NextJsCdn } from "./next-js-cdn";
+
+import { appendHash } from "../utils";
 
 type Props = {
   openNextAssetsDir: string;
   openNextCacheDir: string;
-} & Pick<s3.Bucket, "bucketName">;
+};
 
 export class NextJSAssetsBucket extends s3.Bucket {
   openNextAssetsDir: string;
   openNextCacheDir: string;
 
   constructor(scope: Construct, id: string, props: Props) {
+    // Auto-create unique bucket name based from stack id
+    const bucketName = appendHash(
+      `${scope.node.id.toLowerCase()}-assets-bucket`
+    );
+
     // Initialise bucket
     super(scope, id, {
-      bucketName: props.bucketName,
+      bucketName,
     });
 
     this.openNextAssetsDir = props.openNextAssetsDir;

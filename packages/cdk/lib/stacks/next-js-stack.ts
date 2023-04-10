@@ -12,10 +12,6 @@ const OPEN_NEXT_SERVER_FUNCTION_DIR =
 const OPEN_NEXT_IMAGE_OPTIMISATION_FUNCTION_DIR =
   "../../packages/www/.open-next/image-optimization-function/";
 
-type Props = cdk.StackProps & {
-  assetsBucketName: string;
-};
-
 /**
  * NextJS CDK Stack
  *
@@ -26,14 +22,10 @@ type Props = cdk.StackProps & {
  *   - CloudFront distribution
  */
 export class NextJsStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: Props) {
-    const { assetsBucketName, ...stackProps } = props;
-
-    super(scope, id, stackProps);
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
 
     const assetsBucket = new NextJSAssetsBucket(this, "AssetsBucket", {
-      // TODO: Auto-generate unique bucket name so it doesn't have to be explicitly defined
-      bucketName: assetsBucketName,
       openNextAssetsDir: OPEN_NEXT_ASSETS_DIR,
       openNextCacheDir: OPEN_NEXT_CACHE_DIR,
     });

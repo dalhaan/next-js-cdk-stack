@@ -14,6 +14,7 @@
     "dev": "yarn workspace www dev",
     "build": "yarn workspace www build:open-next",
     "diff": "yarn workspace cdk cdk diff",
-    "deploy": "yarn workspace cdk deploy"
+    "deploy": "yarn workspace cdk deploy",
+    "cdk": "yarn workspace cdk cdk"
   }
 }

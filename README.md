@@ -2,6 +2,11 @@
 
 AWS CDK stack to provision the infra for and deploy a NextJS site on AWS using Open Next and AWS CDK.
 
+## Checklist
+
+- [x] ISR
+- [ ] Middleware
+
 ## Quick start
 
 ```bash
