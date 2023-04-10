@@ -16,10 +16,10 @@ export class NextJsCdn extends cloudfront.Distribution {
     // origins
     const assetsBucketOrigin = new origins.S3Origin(props.assetsBucket);
     const serverFunctionOrigin = new origins.HttpOrigin(
-      props.serverFunction.url
+      props.serverFunction.domainName
     );
     const imageOptimisationFunctionOrigin = new origins.HttpOrigin(
-      props.imageOptimisationFunction.url
+      props.imageOptimisationFunction.domainName
     );
     const defaultFailoverOriginGroup = new origins.OriginGroup({
       primaryOrigin: assetsBucketOrigin,

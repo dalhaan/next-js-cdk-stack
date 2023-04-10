@@ -3,7 +3,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 
-import { stripSchemeFromUrl } from "../utils";
+import { getDomainNameFromUrl } from "../utils";
 
 type Props = {
   assetsBucket: s3.Bucket;
@@ -11,7 +11,7 @@ type Props = {
 };
 
 export class NextJsImageOptimisationFunction extends Construct {
-  public url: string;
+  public domainName: string;
 
   constructor(scope: Construct, id: string, props: Props) {
     super(scope, id);
@@ -41,13 +41,11 @@ export class NextJsImageOptimisationFunction extends Construct {
         authType: lambda.FunctionUrlAuthType.NONE,
       });
     // Strip scheme (https://) from image optimisation function url to use for an HttpOrigin
-    const imageOptimisationFunctionUrlNoScheme = stripSchemeFromUrl(
-      imageOptimisationFunctionUrl.url
-    );
+    const domainName = getDomainNameFromUrl(imageOptimisationFunctionUrl.url);
 
     // Allow read/write to assets bucket
     props.assetsBucket.grantRead(imageOptimisationFunction);
 
-    this.url = imageOptimisationFunctionUrlNoScheme;
+    this.domainName = domainName;
   }
 }
