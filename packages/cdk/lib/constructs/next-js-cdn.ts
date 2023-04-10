@@ -22,9 +22,9 @@ export class NextJsCdn extends cloudfront.Distribution {
       props.imageOptimisationFunction.url
     );
     const defaultFailoverOriginGroup = new origins.OriginGroup({
-      primaryOrigin: serverFunctionOrigin,
-      fallbackOrigin: assetsBucketOrigin,
-      fallbackStatusCodes: [404],
+      primaryOrigin: assetsBucketOrigin,
+      fallbackOrigin: serverFunctionOrigin,
+      fallbackStatusCodes: [403, 404],
     });
 
     super(scope, id, {
