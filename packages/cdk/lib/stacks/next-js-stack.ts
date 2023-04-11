@@ -1,16 +1,14 @@
 import * as cdk from "aws-cdk-lib";
+import * as path from "node:path";
 import { Construct } from "constructs";
 import { NextJSAssetsBucket } from "../constructs/next-js-assets-bucket";
 import { NextJsServerFunction } from "../constructs/next-js-server-function";
 import { NextJsImageOptimisationFunction } from "../constructs/next-js-image-optimisation-function";
 import { NextJsCdn } from "../constructs/next-js-cdn";
 
-const OPEN_NEXT_ASSETS_DIR = "../../packages/www/.open-next/assets/";
-const OPEN_NEXT_CACHE_DIR = "../../packages/www/.open-next/cache/";
-const OPEN_NEXT_SERVER_FUNCTION_DIR =
-  "../../packages/www/.open-next/server-function/";
-const OPEN_NEXT_IMAGE_OPTIMISATION_FUNCTION_DIR =
-  "../../packages/www/.open-next/image-optimization-function/";
+type Props = cdk.StackProps & {
+  path: string;
+};
 
 /**
  * NextJS CDK Stack
@@ -22,17 +20,17 @@ const OPEN_NEXT_IMAGE_OPTIMISATION_FUNCTION_DIR =
  *   - CloudFront distribution
  */
 export class NextJsStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: Props) {
     super(scope, id, props);
 
     const assetsBucket = new NextJSAssetsBucket(this, "AssetsBucket", {
-      openNextAssetsDir: OPEN_NEXT_ASSETS_DIR,
-      openNextCacheDir: OPEN_NEXT_CACHE_DIR,
+      openNextAssetsDir: path.join(props.path, ".open-next/assets"),
+      openNextCacheDir: path.join(props.path, ".open-next/cache"),
     });
 
     const serverFunction = new NextJsServerFunction(this, "ServerFunction", {
       assetsBucket,
-      openNextServerDir: OPEN_NEXT_SERVER_FUNCTION_DIR,
+      openNextServerDir: path.join(props.path, ".open-next/server-function"),
     });
 
     const imageOptimisationFunction = new NextJsImageOptimisationFunction(
@@ -40,8 +38,10 @@ export class NextJsStack extends cdk.Stack {
       "ImageOptimisationFunction",
       {
         assetsBucket,
-        openNextImageOptimisationFunctionDir:
-          OPEN_NEXT_IMAGE_OPTIMISATION_FUNCTION_DIR,
+        openNextImageOptimisationFunctionDir: path.join(
+          props.path,
+          ".open-next/image-optimization-function"
+        ),
       }
     );
 

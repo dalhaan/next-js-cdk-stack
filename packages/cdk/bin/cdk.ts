@@ -5,4 +5,6 @@ import "source-map-support/register";
 import { NextJsStack } from "../lib/stacks/next-js-stack";
 
 const app = new cdk.App();
-new NextJsStack(app, "NextJsStack");
+new NextJsStack(app, "NextJsStack", {
+  path: "../www",
+});
