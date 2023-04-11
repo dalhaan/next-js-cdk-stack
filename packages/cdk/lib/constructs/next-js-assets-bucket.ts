@@ -43,7 +43,8 @@ export class NextJSAssetsBucket extends s3.Bucket {
       ],
       destinationBucket: this,
       retainOnDelete: false,
-      distribution: cdn, // invalidate cdn's cache
+      // invalidate cdn's cache
+      distribution: cdn,
       distributionPaths: ["/*"],
     });
   }

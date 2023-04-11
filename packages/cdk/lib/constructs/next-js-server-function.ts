@@ -21,6 +21,7 @@ export class NextJsServerFunction extends Construct {
       handler: "index.handler",
       code: lambda.Code.fromAsset(props.openNextServerDir),
       timeout: cdk.Duration.seconds(10),
+      tracing: cdk.aws_lambda.Tracing.ACTIVE,
     });
 
     // Server function environment variables

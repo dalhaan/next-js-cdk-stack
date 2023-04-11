@@ -25,6 +25,7 @@ export class NextJsImageOptimisationFunction extends Construct {
         handler: "index.handler",
         code: lambda.Code.fromAsset(props.openNextImageOptimisationFunctionDir),
         timeout: cdk.Duration.seconds(10),
+        tracing: cdk.aws_lambda.Tracing.ACTIVE,
       }
     );
 
